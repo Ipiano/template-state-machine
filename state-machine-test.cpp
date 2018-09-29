@@ -1,4 +1,4 @@
-#include "state-machine.h"
+#include "finite-state-machine.h"
 
 #include <iostream>
 #include <string>
@@ -28,7 +28,7 @@ ostream& operator << (ostream& out, const State& s)
 
 typedef State state_type;
 
-typedef StateMachine<state_type,
+typedef FiniteStateMachine<state_type,
             TransitionList<
                 Transition<state_type, State::Start, State::Ready>,
                 Transition<state_type, State::Ready, State::Working>,
