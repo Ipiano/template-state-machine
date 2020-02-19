@@ -1,4 +1,4 @@
-#include "finite-state-machine.h"
+#include "state-machine.h"
 
 #include <iostream>
 #include <string>
@@ -8,51 +8,67 @@ using namespace state_machine;
 using namespace std;
 
 mt19937_64 reng;
-uniform_int_distribution<> stateChoices(0, 5);
+uniform_int_distribution<> eventChoices(0, 2);
 
-enum class State
+
+enum class States
 {
-    Start,
-    Ready,
-    Working,
-    Failed,
-    Succeeded,
-    Resetting
+    STATE_0, STATE_1, STATE_2
 };
 
-string StateNames[] = {"Start", "Ready", "Working", "Failed", "Succeeded", "Resetting"};
-ostream& operator << (ostream& out, const State& s)
+enum class Events
 {
-    return out << StateNames[static_cast<size_t>(s)];
+    EVENT_0, EVENT_1, EVENT_2
+};
+
+
+typedef Language<States, Events> Language_t;
+
+typedef Language_t::Transition<States::STATE_0, States::STATE_1, Events::EVENT_0> Transition_1;
+typedef Language_t::Transition<States::STATE_0, States::STATE_2, Events::EVENT_1> Transition_2;
+typedef Language_t::Transition<States::STATE_1, States::STATE_2, Events::EVENT_1> Transition_3;
+typedef Language_t::Transition<States::STATE_2, States::STATE_0, Events::EVENT_2> Transition_4;
+
+typedef StateMachine<Language_t, States::STATE_0, Transition_1, Transition_2, Transition_3, Transition_4> StateMachine_t;
+
+std::ostream& operator << (std::ostream& out, const States s)
+{
+    return out << static_cast<int>(s);
 }
 
-typedef State state_type;
+std::ostream& operator << (std::ostream& out, const Events e)
+{
+    return out << static_cast<int>(e);
+}
 
-typedef FiniteStateMachine<state_type,
-            TransitionList<
-                Transition<state_type, State::Start, State::Ready>,
-                Transition<state_type, State::Ready, State::Working>,
-                Transition<state_type, State::Ready, State::Resetting>,
-                Transition<state_type, State::Working, State::Failed>,
-                Transition<state_type, State::Working, State::Succeeded>,
-                Transition<state_type, State::Failed, State::Resetting>,
-                Transition<state_type, State::Succeeded, State::Resetting>,
-                Transition<state_type, State::Resetting, State::Ready>
-            >
-        > StateMachineType;
+void change(const States s1, const States s2, const Events e)
+{
+    std::cout << s1 << " -> " << s2 << " :: " << e << std::endl;
+}
+
+void noChange(const States s, const Events e)
+{
+    std::cout << s << " :: " << e << std::endl;
+}
 
 int main()
 {
-    StateMachineType sm(State::Start, 
-    [](const state_type& fromState, const state_type& toState)
-    {cout << "Transition " << fromState << " -> " << toState << endl;},
-
-    [](const state_type& fromState, const state_type& toState)
-    {cout << "Failed Transition " << fromState << " -> " << toState << endl;});
+    StateMachine_t machine(&change, &noChange);
 
     for(int i=0; i<100; i++)
     {
-        sm.transition(static_cast<state_type>(stateChoices(reng)));
+        switch(eventChoices(reng))
+        {
+            case 0:
+                machine.event<Events::EVENT_0>();
+            break;
+            case 1:
+                machine.event<Events::EVENT_1>();
+            break;
+            case 2:
+                machine.event<Events::EVENT_2>();
+            break;
+        }
     }
 
     return 0;
